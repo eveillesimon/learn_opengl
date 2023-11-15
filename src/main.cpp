@@ -2,8 +2,9 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-void framebuffer_size_callback(GLFWwindow * window, int width, int height);
-void process_input(GLFWwindow * window);
+void framebufferSizeCallback(GLFWwindow * window, int width, int height);
+void processInput(GLFWwindow * window);
+std::string fetchShader(std::string_view shader); // TODO: implement this to improve shader imports
 
 // Most simple vertex shader possible
 const char * vertexShaderSource = "#version 330 core\n"
@@ -52,7 +53,7 @@ int main(void)
     }
 
     glViewport(0, 0, 800, 600);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     float vertices[] = {
             -0.5f,  0.5f , 0.0f,
@@ -139,7 +140,7 @@ int main(void)
     // Loop until the user closes the window
     while (!glfwWindowShouldClose(window))
     {
-        process_input(window);
+        processInput(window);
 
         // Render here
         glClearColor(0.1f, 0.2f, 0.4f, 1.0f);
@@ -160,11 +161,11 @@ int main(void)
     return 0;
 }
 
-void framebuffer_size_callback(GLFWwindow * window, int width, int height) {
+void framebufferSizeCallback(GLFWwindow * window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void process_input(GLFWwindow * window) {
+void processInput(GLFWwindow * window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
