@@ -1,18 +1,13 @@
 #include <GLEW/glew.h>
 #include <GLFW/glfw3.h>
+
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 void framebufferSizeCallback(GLFWwindow * window, int width, int height);
 void processInput(GLFWwindow * window);
-std::string fetchShader(std::string_view shader); // TODO: implement this to improve shader imports
-
-// Most simple vertex shader possible
-const char * vertexShaderSource = "#version 330 core\n"
-                                 "layout (location = 0) in vec3 aPos;\n"
-                                 "void main()\n"
-                                 "{\n"
-                                 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-                                 "}\0";
+std::string fetchShader(std::string_view shaderPath);
 
 // Constant color fragment shader
 const char * fragmentShaderSource = "#version 330 core\n"
@@ -69,9 +64,11 @@ int main(void)
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW); // move vertices to GL_ARRAY_BUFFER
 
     // Vertex Shader
+    const std::string vertexShaderSource = fetchShader("res/shader/basic.shader");
+
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
+    glShaderSource(vertexShader, 1, (char const * const *) vertexShaderSource.c_str(), nullptr);
     glCompileShader(vertexShader);
 
     { // Error handling
@@ -169,4 +166,18 @@ void processInput(GLFWwindow * window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
+}
+
+std::string fetchShader(std::string_view shaderPath) {
+    std::ifstream file = std::ifstream(shaderPath.data());
+    std::stringstream source = std::stringstream();
+    char line[255];
+
+    while (!file.getline(line, 255).eof()) {
+        source.write(line, file.gcount());
+    }
+    file.close();
+    std::cout << "extracting file" << std::endl;
+    std::cout << source.str() << std::endl;
+    return source.str();
 }
