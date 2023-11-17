@@ -4,10 +4,11 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 void framebufferSizeCallback(GLFWwindow * window, int width, int height);
 void processInput(GLFWwindow * window);
-std::string fetchShader(std::string_view shaderPath);
+int fetchShader(std::string_view shaderPath, std::string & result);
 
 // Constant color fragment shader
 const char * fragmentShaderSource = "#version 330 core\n"
@@ -16,7 +17,7 @@ const char * fragmentShaderSource = "#version 330 core\n"
                                     "   FragColor = vec4(0.15f, 0.3f, 0.6f, 1.0f);\n"
                                     "}\n";
 
-int main(void)
+int main()
 {
     GLFWwindow * window;
 
@@ -64,11 +65,14 @@ int main(void)
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW); // move vertices to GL_ARRAY_BUFFER
 
     // Vertex Shader
-    const std::string vertexShaderSource = fetchShader("res/shader/basic.shader");
+    std::string * vertexShaderSource{};
+    if (fetchShader("res/shaders/basic/vertex.shader", *vertexShaderSource)) {
+     std::cerr << "Error happened fetching shader" << std::endl;
+    }
 
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, (char const * const *) vertexShaderSource.c_str(), nullptr);
+    glShaderSource(vertexShader, 1, (char const * const *) vertexShaderSource->c_str(), nullptr);
     glCompileShader(vertexShader);
 
     { // Error handling
@@ -168,16 +172,30 @@ void processInput(GLFWwindow * window) {
     }
 }
 
-std::string fetchShader(std::string_view shaderPath) {
-    std::ifstream file = std::ifstream(shaderPath.data());
-    std::stringstream source = std::stringstream();
-    char line[255];
+int fetchShader(std::string_view shaderPath, std::string & result) {
 
-    while (!file.getline(line, 255).eof()) {
-        source.write(line, file.gcount());
+    if (!std::filesystem::exists(shaderPath)) {
+        std::cerr << "The file " << shaderPath.data() << " does not exist" << std::endl;
+        return -1;
+    }
+    std::ifstream file{};
+    file.open(shaderPath.data());
+
+    if ((file.rdstate() & file.fail()) != 0) {
+        std::cerr << "Failed to open " << shaderPath.data() << std::endl;
+        return -1;
+    }
+    std::ostringstream source{};
+    std::string line{};
+
+    while (std::getline(file, line)) {
+        std::cout << line << std::endl;
     }
     file.close();
-    std::cout << "extracting file" << std::endl;
+
+    std::cout << "extracted file" << std::endl;
     std::cout << source.str() << std::endl;
-    return source.str();
+
+    result = source.str();
+    return 0;
 }

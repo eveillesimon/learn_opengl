@@ -11,6 +11,14 @@ add_executable(${TARGET_NAME}
         dependencies/GLFW/include/GLFW/glfw3.h
         dependencies/GLEW/include/GLEW/glew.h)
 
+add_custom_target(resources ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${PROJECT_SOURCE_DIR}/res
+        ${PROJECT_BINARY_DIR}/res
+        COMMENT "Copying resources into binary directory")
+
+add_dependencies(${TARGET_NAME} resources)
+
 # GLFW
 target_link_libraries(${TARGET_NAME} ${CMAKE_SOURCE_DIR}/dependencies/GLFW/libglfw3.a)
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/dependencies/GLFW/include)
