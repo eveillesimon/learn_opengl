@@ -10,8 +10,16 @@ void framebufferSizeCallback(GLFWwindow * window, int width, int height);
 void processInput(GLFWwindow * window);
 int fetchShader(std::string_view shaderPath, std::string & result);
 
+// Simple vertex shader
+const char * vertexShaderSourceString = "#version 330 core\n"
+                                          "layout (location = 0) in vec3 aPos;\n"
+                                          "void main()\n"
+                                          "{\n"
+                                          "    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+                                          "}\n";
+
 // Constant color fragment shader
-const char * fragmentShaderSource = "#version 330 core\n"
+const char * fragmentShaderSourceString = "#version 330 core\n"
                                     "out vec4 FragColor;\n"
                                     "void main() {\n"
                                     "   FragColor = vec4(0.15f, 0.3f, 0.6f, 1.0f);\n"
@@ -65,14 +73,14 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW); // move vertices to GL_ARRAY_BUFFER
 
     // Vertex Shader
-    std::string * vertexShaderSource{};
-    if (fetchShader("res/shaders/basic/vertex.shader", *vertexShaderSource)) {
-     std::cerr << "Error happened fetching shader" << std::endl;
-    }
+
+
+
+
 
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, (char const * const *) vertexShaderSource->c_str(), nullptr);
+    glShaderSource(vertexShader, 1, &vertexShaderSourceString, nullptr);
     glCompileShader(vertexShader);
 
     { // Error handling
@@ -89,7 +97,7 @@ int main()
     // Fragment Shader
     unsigned int fragmentShader;
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSourceString, nullptr);
     glCompileShader(fragmentShader);
 
     { // Error handling
@@ -192,9 +200,6 @@ int fetchShader(std::string_view shaderPath, std::string & result) {
         std::cout << line << std::endl;
     }
     file.close();
-
-    std::cout << "extracted file" << std::endl;
-    std::cout << source.str() << std::endl;
 
     result = source.str();
     return 0;
