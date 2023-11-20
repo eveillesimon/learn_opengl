@@ -19,6 +19,12 @@ add_custom_target(resources ALL
 
 add_dependencies(${TARGET_NAME} resources)
 
+if (MSVC)
+    add_compile_options(/W4)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
 # GLFW
 target_link_libraries(${TARGET_NAME} ${CMAKE_SOURCE_DIR}/dependencies/GLFW/libglfw3.a)
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/dependencies/GLFW/include)

@@ -6,9 +6,16 @@
 #include <sstream>
 #include <filesystem>
 
+struct ShaderSources {
+    std::string vertex;
+    std::string fragment;
+};
+
 void framebufferSizeCallback(GLFWwindow * window, int width, int height);
 void processInput(GLFWwindow * window);
-int fetchShader(std::string_view shaderPath, std::string & result);
+int parseShaders(std::string_view shaderPath, ShaderSources &sources);
+int createAndLinkShaders(ShaderSources sources);
+
 
 // Simple vertex shader
 const char * vertexShaderSourceString = "#version 330 core\n"
@@ -73,8 +80,16 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW); // move vertices to GL_ARRAY_BUFFER
 
     // Vertex Shader
+    ShaderSources sources;
+    if (parseShaders("res/shaders/basic.shader", sources) != 0) {
+        std::cerr << "Could not parse shaders" << std::endl;
+        return -1;
+    }
 
-
+    std::cout << "VERTEX SHADER" << std::endl;
+    std::cout << sources.vertex << std::endl;
+    std::cout << "FRAGMENT SHADER" << std::endl;
+    std::cout << sources.fragment << std::endl;
 
 
 
@@ -180,7 +195,11 @@ void processInput(GLFWwindow * window) {
     }
 }
 
-int fetchShader(std::string_view shaderPath, std::string & result) {
+int parseShaders(const std::string_view shaderPath, ShaderSources &sources) {
+
+    enum class ShaderType {
+        NONE = -1, VERTEX = 0, FRAGMENT = 1
+    };
 
     if (!std::filesystem::exists(shaderPath)) {
         std::cerr << "The file " << shaderPath.data() << " does not exist" << std::endl;
@@ -193,14 +212,34 @@ int fetchShader(std::string_view shaderPath, std::string & result) {
         std::cerr << "Failed to open " << shaderPath.data() << std::endl;
         return -1;
     }
-    std::ostringstream source{};
-    std::string line{};
+    std::stringstream sstream[2];
+    std::string line;
 
+    ShaderType currentMode = ShaderType::NONE;
+    int lineCount = 0;
     while (std::getline(file, line)) {
-        std::cout << line << std::endl;
+        lineCount++;
+        if (line.find("#shader") != std::string::npos) {
+            if (line.find("vertex") != std::string::npos) {
+                currentMode = ShaderType::VERTEX;
+            } else if (line.find("fragment") != std::string::npos) {
+                currentMode = ShaderType::FRAGMENT;
+            } else {
+                std::cerr << "Shader type could not be find on line " << lineCount << std::endl;
+            }
+        }
+
+        if (currentMode == ShaderType::NONE) {
+            std::cerr << "Your shader should have a descriptor on line 1 (ex: \"#shader vertex\")" << std::endl;
+            return -1;
+        }
+
+        sstream[(int)currentMode] << line << '\n';
     }
     file.close();
 
-    result = source.str();
+    sources.vertex = sstream[(int)ShaderType::VERTEX].str();
+    sources.fragment = sstream[(int)ShaderType::FRAGMENT].str();
+
     return 0;
 }
