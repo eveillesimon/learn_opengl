@@ -14,7 +14,7 @@ struct ShaderSources {
 void framebufferSizeCallback(GLFWwindow * window, int width, int height);
 void processInput(GLFWwindow * window);
 int parseShaders(std::string_view shaderPath, ShaderSources &sources);
-int createAndLinkShaders(ShaderSources sources);
+int compileAndLinkShaders(ShaderSources sources, unsigned int &shaderProgram);
 
 
 // Simple vertex shader
@@ -79,78 +79,21 @@ int main()
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW); // move vertices to GL_ARRAY_BUFFER
 
-    // Vertex Shader
+    // Shaders
     ShaderSources sources;
     if (parseShaders("res/shaders/basic.shader", sources) != 0) {
         std::cerr << "Could not parse shaders" << std::endl;
         return -1;
     }
 
-    std::cout << "VERTEX SHADER" << std::endl;
-    std::cout << sources.vertex << std::endl;
-    std::cout << "FRAGMENT SHADER" << std::endl;
-    std::cout << sources.fragment << std::endl;
-
-
-
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSourceString, nullptr);
-    glCompileShader(vertexShader);
-
-    { // Error handling
-        int success;
-        char log[512];
-        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-
-        if (!success) {
-            glGetShaderInfoLog(vertexShader, 512, nullptr, log);
-            std::cerr << "Vertex shader compilation failed: " << log << std::endl;
-        }
-    }
-
-    // Fragment Shader
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSourceString, nullptr);
-    glCompileShader(fragmentShader);
-
-    { // Error handling
-        int success;
-        char log[512];
-        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-
-        if (!success) {
-            glGetShaderInfoLog(fragmentShader, 512, nullptr, log);
-            std::cerr << "Fragment shader compilation failed: " << log << std::endl;
-        }
-    }
-
-    // Shader Program
     unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    { // Error handling
-        int success;
-        char log[512];
-        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-
-        if (!success) {
-            glGetProgramInfoLog(shaderProgram, 512, nullptr, log);
-            std::cerr << "Shader program linking failed: " << log << std::endl;
-        }
+    if (compileAndLinkShaders(sources, shaderProgram) != 0) {
+        std::cerr << "Could not compile or use shaders" << std::endl;
+        return -1;
     }
-
-    glUseProgram(shaderProgram);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
 
     // Define vertices format
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
     // Vertex array
     unsigned int vertexArray;
@@ -158,7 +101,7 @@ int main()
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
     glEnableVertexAttribArray(0); // zero because it's the first and only (for now)
 
     // Loop until the user closes the window
@@ -225,21 +168,74 @@ int parseShaders(const std::string_view shaderPath, ShaderSources &sources) {
             } else if (line.find("fragment") != std::string::npos) {
                 currentMode = ShaderType::FRAGMENT;
             } else {
-                std::cerr << "Shader type could not be find on line " << lineCount << std::endl;
+                std::cerr << "Shader type could not be found on line " << lineCount << std::endl;
+                return -1;
             }
+        } else {
+            if (currentMode == ShaderType::NONE) {
+                std::cerr << "Your shader should have a descriptor on line 1 (ex: \"#shader vertex\")" << std::endl;
+                return -1;
+            }
+            sstream[(int)currentMode] << line << '\n';
         }
-
-        if (currentMode == ShaderType::NONE) {
-            std::cerr << "Your shader should have a descriptor on line 1 (ex: \"#shader vertex\")" << std::endl;
-            return -1;
-        }
-
-        sstream[(int)currentMode] << line << '\n';
     }
     file.close();
 
     sources.vertex = sstream[(int)ShaderType::VERTEX].str();
     sources.fragment = sstream[(int)ShaderType::FRAGMENT].str();
+
+    return 0;
+}
+
+int compileAndLinkShaders(ShaderSources sources, unsigned int &shaderProgram) {
+    int shaderIds[2];
+    int shaderTypes[2] = {
+            GL_VERTEX_SHADER,
+            GL_FRAGMENT_SHADER
+    };
+    const char * source[2] = {
+            sources.vertex.c_str(),
+            sources.fragment.c_str()
+    };
+    shaderProgram = glCreateProgram();
+
+    for (int i = 0; i < 2; i++) {
+        shaderIds[i] = glCreateShader(shaderTypes[i]);
+        glShaderSource(shaderIds[i], 1, &source[i], nullptr);
+        glCompileShader(shaderIds[i]);
+
+        int success;
+        char log[512];
+        glGetShaderiv(shaderIds[i], GL_COMPILE_STATUS, &success);
+
+        if (!success) {
+            glGetShaderInfoLog(shaderIds[i], 512, nullptr, log);
+            std::cerr << "Shader compilation failed: " << log << std::endl;
+            return -1;
+        }
+
+        glAttachShader(shaderProgram, shaderIds[i]);
+    }
+
+    glLinkProgram(shaderProgram);
+
+    { // Error handling
+        int success;
+        char log[512];
+        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+
+        if (!success) {
+            glGetProgramInfoLog(shaderProgram, 512, nullptr, log);
+            std::cerr << "Shader program linking failed: " << log << std::endl;
+            return -1;
+        }
+    }
+
+    glUseProgram(shaderProgram);
+
+    for (int i = 0; i < 2 ; i++) {
+        glDeleteShader(shaderIds[i]);
+    }
 
     return 0;
 }
