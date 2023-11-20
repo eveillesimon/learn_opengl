@@ -16,22 +16,6 @@ void processInput(GLFWwindow * window);
 int parseShaders(std::string_view shaderPath, ShaderSources &sources);
 int compileAndLinkShaders(ShaderSources sources, unsigned int &shaderProgram);
 
-
-// Simple vertex shader
-const char * vertexShaderSourceString = "#version 330 core\n"
-                                          "layout (location = 0) in vec3 aPos;\n"
-                                          "void main()\n"
-                                          "{\n"
-                                          "    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-                                          "}\n";
-
-// Constant color fragment shader
-const char * fragmentShaderSourceString = "#version 330 core\n"
-                                    "out vec4 FragColor;\n"
-                                    "void main() {\n"
-                                    "   FragColor = vec4(0.15f, 0.3f, 0.6f, 1.0f);\n"
-                                    "}\n";
-
 int main()
 {
     GLFWwindow * window;
