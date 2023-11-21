@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <valarray>
 
 struct ShaderSources {
     std::string vertex;
@@ -51,9 +52,9 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     float vertices[] = {
-            -0.5f,  0.5f , 0.0f,
-             0.5f,  0.5f , 0.0f,
-             0.0f, -0.5f , 0.0f,
+             -0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+              0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+              0.0f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f
     };
 
     // Vertex Buffer
@@ -65,7 +66,7 @@ int main()
 
     // Shaders
     ShaderSources sources;
-    if (parseShaders("res/shaders/basic.shader", sources) != 0) {
+    if (parseShaders("res/shaders/3colors.shader", sources) != 0) {
         std::cerr << "Could not parse shaders" << std::endl;
         return -1;
     }
@@ -85,8 +86,10 @@ int main()
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0); // zero because it's the first and only (for now)
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     // Loop until the user closes the window
     while (!glfwWindowShouldClose(window))
@@ -98,6 +101,12 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
+
+        float time = glfwGetTime();
+        float greenValue = sin(time / 2.0f) / 2.0f + .5f;
+        int greenColourUniform = glGetUniformLocation(shaderProgram, "greenColor");
+        glUniform1f(greenColourUniform, greenValue);
+
         glBindVertexArray(vertexArray);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
