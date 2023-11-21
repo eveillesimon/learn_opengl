@@ -103,9 +103,16 @@ int main()
         glUseProgram(shaderProgram);
 
         float time = glfwGetTime();
-        float greenValue = sin(time / 2.0f) / 2.0f + .5f;
-        int greenColourUniform = glGetUniformLocation(shaderProgram, "greenColor");
-        glUniform1f(greenColourUniform, greenValue);
+
+        // greenColor uniform
+        float green = sin(time * 2.0f) / 2.0f + .5f;
+        unsigned int greenColourUniform = glGetUniformLocation(shaderProgram, "greenColor");
+        glUniform1f(greenColourUniform, green);
+
+        // hOffset uniform
+        float offset = cos(time * 4.0f) / 2.0f ;
+        unsigned int hOffsetuniform = glGetUniformLocation(shaderProgram, "hOffset");
+        glUniform1f(hOffsetuniform, offset);
 
         glBindVertexArray(vertexArray);
         glDrawArrays(GL_TRIANGLES, 0, 3);
