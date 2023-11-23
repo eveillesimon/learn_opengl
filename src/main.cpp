@@ -15,7 +15,7 @@ struct ShaderSources {
 void framebufferSizeCallback(GLFWwindow * window, int width, int height);
 void processInput(GLFWwindow * window);
 int parseShaders(std::string_view shaderPath, ShaderSources &sources);
-int compileAndLinkShaders(ShaderSources sources, unsigned int &shaderProgram);
+int compileAndLinkShaders(const ShaderSources& sources, unsigned int &shaderProgram);
 
 int main()
 {
@@ -30,7 +30,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(800, 600, "Learning OpenGL", nullptr, nullptr);
+    window = glfwCreateWindow(800, 800, "Learning OpenGL", nullptr, nullptr);
     if (!window)
     {
         std::cerr << "GLFW failed to open a window (oh no cringe)" << std::endl;
@@ -48,25 +48,34 @@ int main()
         std::cerr << "GLEW encountered a problem while initializing: " << glewGetErrorString(err) << std::endl;
     }
 
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, 800, 800);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     float vertices[] = {
-               0.5f,  0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-               0.0f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-              -0.5f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+               -0.5f,  0.5f, 0.0f, 1.0f,  0.96f, 0.87f,
+               -0.5f, -0.5f, 0.0f, 1.0f,  0.41f, 0.41f,
+                0.5f, -0.5f, 0.0f, 0.78f, 0.0f,  0.22f,
+                0.5f,  0.5f, 0.0f, 0.07f, 0.11f, 0.27f,
+    };
 
-               0.5f,  0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-               0.0f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-              -0.5f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+    unsigned int indices[] = {
+            0, 1, 2,
+            0, 2, 3
     };
 
     // Vertex Buffer
     unsigned int vertexBuffer;
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW); // move vertices to GL_ARRAY_BUFFER
+
+
+    // Element Buffer
+    unsigned int elementBuffer;
+    glGenBuffers(1, &elementBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices, GL_STATIC_DRAW);
+
 
 
 
@@ -93,7 +102,7 @@ int main()
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), nullptr);
     glEnableVertexAttribArray(0); // zero because it's the first and only (for now)
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
@@ -104,28 +113,28 @@ int main()
         processInput(window);
 
         // Render here
-        glClearColor(0.1f, 0.2f, 0.4f, 1.0f);
+        glClearColor(0.07f / 3.2f, 0.11f / 3.2f, 0.27f / 3.2f, 1.0f / 3.2f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
 
-        float time = glfwGetTime();
+        auto time = (float) glfwGetTime();
 
         // greenColor uniform
-        float green = sin(time * 2.0f) / 2.0f + .5f;
-        int greenColourUniform = glGetUniformLocation(shaderProgram, "greenColor");
-        glUniform1f(greenColourUniform, green);
+        float shift = std::sin(time * 2.0f) / 2.0f + .5f;
+        int shiftColourUniform = glGetUniformLocation(shaderProgram, "shiftColor");
+        glUniform1f(shiftColourUniform, shift);
 
         // hOffset uniform
         float offset[2] = {
-                static_cast<float>(cos(time * 2.0f) / 2.0f),
-                static_cast<float>(sin(time * 2.0f) / 2.0f)
+                static_cast<float>(std::cos(time * 2.0f) / 2.0f),
+                static_cast<float>(std::sin(time * 2.0f) / 2.0f)
         };
         int offsetUniform = glGetUniformLocation(shaderProgram, "offset");
         glUniform2f(offsetUniform, offset[0], offset[1]);
 
-        glBindVertexArray(vertexArray);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
         // Swap front and back buffers
         glfwSwapBuffers(window);
@@ -197,7 +206,7 @@ int parseShaders(const std::string_view shaderPath, ShaderSources &sources) {
     return 0;
 }
 
-int compileAndLinkShaders(ShaderSources sources, unsigned int &shaderProgram) {
+int compileAndLinkShaders(const ShaderSources& sources, unsigned int &shaderProgram) {
     int shaderIds[2];
     int shaderTypes[2] = {
             GL_VERTEX_SHADER,
@@ -243,8 +252,8 @@ int compileAndLinkShaders(ShaderSources sources, unsigned int &shaderProgram) {
 
     glUseProgram(shaderProgram);
 
-    for (int i = 0; i < 2 ; i++) {
-        glDeleteShader(shaderIds[i]);
+    for (int shaderId : shaderIds) {
+        glDeleteShader(shaderId);
     }
 
     return 0;

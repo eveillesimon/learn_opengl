@@ -13,7 +13,7 @@ void main()
 #version 330 core
 in vec3 ourColor;
 out vec4 FragColor;
-uniform float greenColor;
+uniform float shiftColor;
 void main() {
-    FragColor = vec4(ourColor.x,greenColor, ourColor.z , 1.0f);
+    FragColor = vec4(ourColor.xyz * shiftColor, 1.0f);
 }
