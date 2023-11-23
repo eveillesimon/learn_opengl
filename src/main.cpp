@@ -52,9 +52,13 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     float vertices[] = {
-             -0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-              0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-              0.0f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f
+               0.5f,  0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+               0.0f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+              -0.5f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+
+               0.5f,  0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+               0.0f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+              -0.5f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
     };
 
     // Vertex Buffer
@@ -63,6 +67,9 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW); // move vertices to GL_ARRAY_BUFFER
+
+
+
 
     // Shaders
     ShaderSources sources;
@@ -118,7 +125,7 @@ int main()
         glUniform2f(offsetUniform, offset[0], offset[1]);
 
         glBindVertexArray(vertexArray);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         // Swap front and back buffers
         glfwSwapBuffers(window);
