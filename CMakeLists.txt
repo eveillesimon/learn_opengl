@@ -9,7 +9,9 @@ set(SOURCES_INCLUDES src/include)
 add_executable(${TARGET_NAME}
         src/main.cpp
         dependencies/GLFW/include/GLFW/glfw3.h
-        dependencies/GLEW/include/GLEW/glew.h)
+        dependencies/GLEW/include/GLEW/glew.h
+        src/include/stb_image.h
+)
 
 add_custom_target(resources ALL
         COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -24,6 +26,9 @@ if (MSVC)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
+
+# Include directory
+target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/src/include)
 
 # GLFW
 target_link_libraries(${TARGET_NAME} ${CMAKE_SOURCE_DIR}/dependencies/GLFW/libglfw3.a)
